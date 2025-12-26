@@ -1,0 +1,89 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace ObjParser.Types
+{
+    public class Face : IType
+    {
+        public const int MinimumDataLength = 4;
+        public const string Prefix = "f";
+
+        public string UseMtl { get; set; }
+        public int[] VertexIndexList { get; set; }
+        public int[] TextureVertexIndexList { get; set; }
+        public List<int> NormalVertexIndexList { get; set; }
+
+        public int Id { get; set; }
+
+        public void LoadFromStringArray(string[] data)
+        {
+            if (data.Length < MinimumDataLength)
+                throw new ArgumentException("Input array must be of minimum length " + MinimumDataLength, "data");
+
+            if (!data[0].ToLower().Equals(Prefix))
+                throw new ArgumentException("Data prefix must be '" + Prefix + "'", "data");
+
+            int vcount = data.Count() - 1;
+            VertexIndexList = new int[vcount];
+            TextureVertexIndexList = new int[vcount];
+            NormalVertexIndexList = new List<int>();
+
+            bool success;
+
+            for (int i = 0; i < vcount; i++)
+            {
+                string[] parts = data[i + 1].Split('/');
+
+                int vindex;
+                success = int.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out vindex);
+                if (!success) throw new ArgumentException("Could not parse parameter as int");
+                VertexIndexList[i] = vindex;
+
+                if (parts.Count() > 1)
+                {
+                    success = int.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out vindex);
+                    if (success)
+                    {
+                        TextureVertexIndexList[i] = vindex;
+                    }
+
+                    if (parts.Count() > 2)
+                    {
+                        int vnIndex;
+                        success = int.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out vnIndex);
+                        if (!success) throw new ArgumentException("Could not parse parameter as int");
+                        NormalVertexIndexList.Add(vnIndex);
+                    }
+                }
+            }
+        }
+
+        public override string ToString()
+        {
+            StringBuilder b = new StringBuilder();
+            b.Append($"{Id} f");
+
+            for (int i = 0; i < VertexIndexList.Count(); i++)
+            {
+                b.AppendFormat(" {0}", VertexIndexList[i]);
+
+                if (TextureVertexIndexList.Any())
+                {
+                    b.AppendFormat("/{0}", TextureVertexIndexList[i]);
+                }
+
+                if (NormalVertexIndexList.Any())
+                {
+                    b.AppendFormat("/{0}", NormalVertexIndexList[i]);
+                }
+            }
+
+            return b.ToString();
+        }
+    }
+}
