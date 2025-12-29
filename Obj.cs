@@ -59,9 +59,10 @@ namespace ObjParser
         /// <param name="data"></param>
 	    public void LoadObj(IEnumerable<string> data)
         {
+            var faceId = 0;
             foreach (var (line, index) in data.Select((value, i) => (value, i)))
             {
-                processLine(line, index);
+                processLine(line, index, ref faceId);
             }
 
             updateSize();
@@ -155,7 +156,7 @@ namespace ObjParser
         /// Parses and loads a line from an OBJ file.
         /// Currently only supports V, VT, F and MTLLIB prefixes
         /// </summary>		
-        private void processLine(string line, int index)
+        private void processLine(string line, int index, ref int faceId)
         {
             string[] parts = line.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
@@ -177,10 +178,11 @@ namespace ObjParser
                         break;
                     case "f":
                         Face f = new Face();
-                        f.Id = index;
+                        f.Id = faceId;
                         f.LoadFromStringArray(parts);
                         f.UseMtl = UseMtl;
                         FaceList.Add(f);
+                        faceId++;
                         break;
                     case "vt":
                         TextureVertex vt = new TextureVertex();
